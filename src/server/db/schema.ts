@@ -1,5 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
+  doublePrecision,
   index,
   integer,
   pgTableCreator,
@@ -31,13 +33,13 @@ export const posts = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
+      () => new Date(),
     ),
   },
   (example) => ({
     createdByIdIdx: index("created_by_idx").on(example.createdById),
     nameIndex: index("name_idx").on(example.name),
-  })
+  }),
 );
 
 export const users = createTable("user", {
@@ -56,6 +58,7 @@ export const users = createTable("user", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
+  transactions: many(transactions),
 }));
 
 export const accounts = createTable(
@@ -78,13 +81,15 @@ export const accounts = createTable(
     scope: varchar("scope", { length: 255 }),
     id_token: text("id_token"),
     session_state: varchar("session_state", { length: 255 }),
+    password: varchar("password", { length: 255 }),
+    salt: varchar("salt", { length: 255 }),
   },
   (account) => ({
     compoundKey: primaryKey({
       columns: [account.provider, account.providerAccountId],
     }),
     userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
+  }),
 );
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -107,7 +112,7 @@ export const sessions = createTable(
   },
   (session) => ({
     userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
+  }),
 );
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -126,5 +131,29 @@ export const verificationTokens = createTable(
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );
+
+export const transactions = createTable("transaction", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+  date: timestamp("date", {
+    withTimezone: true,
+  }).notNull(),
+  value: doublePrecision("value").notNull(),
+  expense: boolean("expense").notNull(),
+  category: varchar("category", { length: 255 }).references(
+    () => transactionCategories.category,
+  ),
+  description: varchar("description", { length: 255 }),
+});
+
+export const transactionCategories = createTable("transaction_category", {
+  userId: varchar("user_id", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+  category: varchar("category", { length: 50 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+});

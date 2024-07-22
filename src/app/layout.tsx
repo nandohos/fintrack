@@ -5,6 +5,9 @@ import { type Metadata } from "next";
 
 import { cn } from "~/lib/utils";
 import { TRPCReactProvider } from "~/trpc/react";
+import { MainNav } from "./_components/main-nav";
+import { SearchNav } from "./_components/search";
+import { UserNav } from "./_components/user-nav";
 
 export const metadata: Metadata = {
   title: "FinTrack",
@@ -28,6 +31,15 @@ export default function RootLayout({
           fontSans.variable,
         )}
       >
+        <header className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <MainNav className="mx-6 font-semibold" />
+            <div className="ml-auto flex items-center space-x-4">
+              <SearchNav />
+              <UserNav />
+            </div>
+          </div>
+        </header>
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
